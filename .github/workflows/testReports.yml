@@ -26,7 +26,7 @@ jobs:
           sudo apt -yq install fonts-ipafont fonts-ipaexfont wget
       - name: prep server report
         run: |
-          sudo apt -yq install texlive texlive-latex-extra inkscape latexdiff
+          sudo apt -yq install texlive texlive-science texlive-latex-extra inkscape latexdiff
       - name: build report diffs
         run: |
           echo "Creating latex diff for content changes ... ..."
