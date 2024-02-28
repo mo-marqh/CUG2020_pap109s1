@@ -1,0 +1,61 @@
+run-name: test build reports
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test_build_reports:
+    runs-on: ubuntu-latest
+    name: 'test build reports'
+    env:
+      UML_FILES: ".puml"
+    steps:
+      # To use this repository's private action,
+      # you must check out the repository
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+      - name: prep server diagram
+        run: |
+          sudo apt update
+          sudo apt -yq install  git
+          sudo apt -yq install fonts-ipafont fonts-ipaexfont wget
+      - name: prep server report
+        run: |
+          sudo apt -yq install texlive texlive-latex-extra inkscape latexdiff
+      - name: build report diffs
+        run: |
+          echo "Creating latex diff for content changes ... ..."
+          ./diff_reports.sh ${{ github.event.pull_request.base.sha }}
+      - name: build reports
+        run: |
+          git branch -a
+          echo "building reports ... ... ..."
+          ./build_reports.sh ${{ github.event.pull_request.base.sha }}
+          git add ./\*.pdf || echo 'no pdf files added'
+          if [ -z "$(git status --porcelain)" ];
+              then echo 'no artifacts identified'
+              echo "artifactPaths=/dev/null" >> $GITHUB_ENV
+          else
+            git status
+            apaths="$(git diff --cached --name-only | grep .pdf)"
+            echo $apaths
+            echo "Formatting artifact upload paths"
+            {
+              echo 'artifactPaths<<EOF'
+              echo $apaths | sed 's/ /\n/g'
+              echo EOF
+            } >> "$GITHUB_ENV"
+            echo ${{ env.artifactPaths }}
+          fi
+      # Upload artifact containing any new report
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: new_paper_content
+          path: |-
+            ${{ env.artifactPaths }}

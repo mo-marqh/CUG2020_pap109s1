@@ -1,0 +1,51 @@
+---  # document start
+
+run-name: build reports and commit to branch
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build_reports:
+    runs-on: ubuntu-latest
+    name: 'build reports'
+    env:
+      UML_FILES: ".puml"
+    steps:
+      # To use this repository's private action,
+      # you must check out the repository
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          ref: ${{ github.sha }}
+      - name: prep server diagram
+        run: |
+          sudo apt update
+          sudo apt -yq install git
+          sudo apt -yq install fonts-ipafont fonts-ipaexfont wget
+      - name: prep server report
+        run: |
+          sudo apt -yq install texlive texlive-latex-extra inkscape
+      - name: build reports
+        run: |
+          git branch -a
+          echo "building reports ... ... ..."
+          ./build_reports.sh ${{ github.event.before }}
+      - name: Push Changes
+        run: |
+          echo "git status"
+          git status
+          git add ./\*.pdf || echo 'no pdf files added'
+          git add ./\*.svg || echo 'no svg files added'
+          git add ./\*.png || echo 'no png files added'
+          if [ -z "$(git status --porcelain)" ];
+              then echo 'nothing to commit'
+          else
+              git config --global user.email "${{ github.actor }}@users.noreply.github.com"
+              git config --global user.name "${{ github.actor }}"
+              git commit -am 'Github Action Commit'
+              git push origin HEAD:tcd-reports
+          fi
