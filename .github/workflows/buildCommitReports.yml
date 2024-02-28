@@ -47,5 +47,5 @@ jobs:
               git config --global user.email "${{ github.actor }}@users.noreply.github.com"
               git config --global user.name "${{ github.actor }}"
               git commit -am 'Github Action Commit'
-              git push origin HEAD:tcd-reports
+              git push origin HEAD:main
           fi
